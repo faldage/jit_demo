@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "abi-decoder": "^2.4.0",
     "alchemy-sdk": "^2.8.3",
     "ethers": "^6.3.0",
     "ethers-utils": "^2.1.11"
