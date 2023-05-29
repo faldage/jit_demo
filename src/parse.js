@@ -2,7 +2,7 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
 import abiDecoder from "abi-decoder";
-const IUniswapV3RouterABI = require("./abi.json");
+const IUniswapV3RouterABI = require("./routerABI.json");
 
 // Easily decode UniswapV3 Router data
 abiDecoder.addABI(IUniswapV3RouterABI);

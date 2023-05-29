@@ -68,3 +68,8 @@ export const calcNextBlockBaseFee = (curBlock) => {
   const rand = Math.floor(Math.random() * 10);
   return newBaseFee.add(rand);
 };
+
+export const calcTickRange = (currentTick, tickSpacing) => {
+  const res1 = currentTick / tickSpacing;
+  return [res1 * tickSpacing, (res1 + 1) * tickSpacing];
+}

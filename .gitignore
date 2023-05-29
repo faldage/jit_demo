@@ -1,4 +1,6 @@
 node_modules/
 other/
-src/apiKey.js
+src/url.js
 1.txt
+data.txt
+test/
