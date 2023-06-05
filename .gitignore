@@ -1,6 +1,9 @@
-node_modules/
-other/
-src/url.js
+bot/node_modules/
+bot/other/
+bot/src/url.js
 1.txt
 data.txt
-test/
+bot/test.js
+bot/calculate.js
+contracts/
+cache/
