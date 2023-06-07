@@ -1,5 +1,6 @@
 /** @type import('hardhat/config').HardhatUserConfig */
 require("@nomicfoundation/hardhat-ethers");
+require("@nomiclabs/hardhat-waffle");
 module.exports = {
   solidity: "0.8.18",
   networks: {
@@ -11,10 +12,8 @@ module.exports = {
         interval: 30000,
       },
       forking: {
-        url: "",
-        blockNumber: 17119904
-      },
-      allowUnlimitedContractSize: true
+        url: ""
+      }
     },
   },
 };
