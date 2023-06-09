@@ -1,5 +1,4 @@
 /** @type import('hardhat/config').HardhatUserConfig */
-require("@nomicfoundation/hardhat-ethers");
 require("@nomiclabs/hardhat-waffle");
 module.exports = {
   solidity: "0.8.18",
@@ -9,7 +8,7 @@ module.exports = {
       chainId: 1,
       mining: {
         auto: false,
-        interval: 30000,
+        interval: 3000,
       },
       forking: {
         url: ""

@@ -16,11 +16,12 @@ export const ABIS = {
   ROUTER02: require("./router02ABI.json"),
   FACTORY: require("./factoryABI.json"),
   POOL: require("./poolABI.json"),
-  ERC20: require("./erc20.json")
+  ERC20: require("./erc20.json"),
+  WETH: require("./wethABI.json")
 }
 
 export const UINT128MAX = 2n ** 128n - 1n;
 export const TOKEN = {
-  WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-
+  WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  USDT_ERC20: "0x6D26DD7D6a1644d3f1493A6649DFA8814a6a895A"
 }
