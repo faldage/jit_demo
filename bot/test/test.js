@@ -19,52 +19,70 @@ console.log("user2.address = ", user2.address);
 
 const WETHContract1 = new hre.ethers.Contract(TOKEN.WETH, ABIS.WETH, user1);
 const WETHContract2 = new hre.ethers.Contract(TOKEN.WETH, ABIS.WETH, user2);
-const USDTContract1 = new hre.ethers.Contract(TOKEN.USDT_ERC20, ABIS.ERC20, user1);
-const USDTContract2 = new hre.ethers.Contract(TOKEN.USDT_ERC20, ABIS.ERC20, user2);
+const DAIContract1 = new hre.ethers.Contract(TOKEN.DAI, ABIS.ERC20, user1);
+const DAIContract2 = new hre.ethers.Contract(TOKEN.DAI, ABIS.ERC20, user2);
 
 async function readBalance(token) {
+  let balance1 = 0;
+  let balance2 = 0;
   switch (token) {
     case "ETH":
-      let ETH_balance1 = await customWsProvider.getBalance(user1.address);
-      let ETH_balance2 = await customWsProvider.getBalance(user2.address);
-      console.log("user1.eth = ", ETH_balance1);
-      console.log("user2.eth = ", ETH_balance2);
+      balance1 = await customWsProvider.getBalance(user1.address);
+      balance2 = await customWsProvider.getBalance(user2.address);
       break;
     case "WETH":
-      let WETH_balance1 = await WETHContract1.balanceOf(user1.address);
-      let WETH_balance2 = await WETHContract2.balanceOf(user2.address);
-      console.log("user1.weth = ", WETH_balance1);
-      console.log("user2.weth = ", WETH_balance2);
+      balance1 = await WETHContract1.balanceOf(user1.address);
+      balance2 = await WETHContract2.balanceOf(user2.address);
       break;
-    case "USDT_ERC20":
-      let USDT_balance1 = await USDTContract1.balanceOf(user1.address);
-      let USDT_balance2 = await USDTContract2.balanceOf(user2.address);
-      console.log("user1.usdt = ", USDT_balance1);
-      console.log("user2.usdt = ", USDT_balance2);
+    case "DAI":
+      balance1 = await DAIContract1.balanceOf(user1.address);
+      balance2 = await DAIContract2.balanceOf(user2.address);
       break;
     default:
-      console.log("Token name is wrong!")
+      console.log("Token name is wrong!");
+      return;
   }
+  console.log("[", token, "]:", "user1 = ", balance1);
+  console.log("[", token, "]:", "user2 = ", balance2);
 }
 
 describe("Test", function () {
   it("Init", async function () {
-    console.log("1");
-    const eth1 = await customWsProvider.getBalance(user1.address, "pending");
-    console.log("eth is ", eth1);
+    console.log(1);
   });
   it("Wrap ETH", async function () {
     await readBalance("ETH");
     await readBalance("WETH");
-    await readBalance("USDT_ERC20");
+    //await readBalance("DAI");
 
     const tx = await WETHContract1.deposit({ value: ethers.utils.parseEther("123") });
+    
+    
+    let blockData = await customWsProvider.send("eth_getBlockByNumber", ["pending",false]);
+    let transactionData1 = await customWsProvider.getTransaction(blockData.transactions[0]);
+    console.log("block data============================");
+    console.log(blockData);
+    console.log("pending transaction1==================");
+    console.log(transactionData1);
+
+    const tx2 = await WETHContract2.deposit({ value: ethers.utils.parseEther("456"), gasPrice: transactionData1.gasPrice.add(1n) });
+
+    blockData = await customWsProvider.send("eth_getBlockByNumber", ["pending",false]);
+    transactionData1 = await customWsProvider.getTransaction(blockData.transactions[0]);
+    let transactionData2 = await customWsProvider.getTransaction(blockData.transactions[1]);
+    console.log("block data============================");
+    console.log(blockData);
+    console.log("pending transaction1==================");
+    console.log(transactionData1);
+    console.log("pending transaction2==================");
+    console.log(transactionData2);
+
     await tx.wait();
-    const tx2 = await WETHContract2.deposit({ value: ethers.utils.parseEther("456") });
     await tx2.wait();
+
     await readBalance("ETH");
     await readBalance("WETH");
-    await readBalance("USDT_ERC20");
+    //await readBalance("DAI");
 
     /*     const router02Contract = new hre.ethers.Contract(CONTRACTS.UNIV3_ROUTER02, ABIS.ROUTER02, user1);
     const dataFunc = ifaceRouter02.encodeFunctionData('wrapETH', [10]);
@@ -80,10 +98,10 @@ describe("Test", function () {
     });
     console.log(res); */
   });
-  it("mint liquidity", async function () {
+  /*it("mint liquidity", async function () {
     // estimate
     // mint
-    /*     let dataFunc = ifa.encodeFunctionData('fee', []);
+         let dataFunc = ifa.encodeFunctionData('fee', []);
         const estimatedGasFee = await await customWsProvider.estimateGas({
           to: poolAddress, data: dataFunc, value: hre.ethers.utils.parseEther("0")
         });
@@ -111,7 +129,7 @@ describe("Test", function () {
          });
          console.log(estimatedGasBurn._hex);
     
-        return; */
+        return; 
 
-  });
+  });*/
 });
