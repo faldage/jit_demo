@@ -1,16 +1,13 @@
-//import { ethers } from "ethers"
 import { calcNextBlockBaseFee, match, stringifyBN, calcTickRange } from "../src/utils.js";
 import { CONTRACTS, ABIS, UINT128MAX, TOKEN } from "../src/constants.js";
 import { parseUniv3RouterTx } from "../src/parse.js"
 import JSBI from "jsbi";
 import hre from "hardhat";
 import { assert } from "chai";
-//import { AbiCoder } from "ethers/lib/utils.js";
-const ifaceRouter02 = new hre.ethers.utils.Interface(ABIS.ROUTER02);
+import { floor } from "mathjs";
+const ifaceRouter = new hre.ethers.utils.Interface(ABIS.ROUTER);
 const abiCoder = new hre.ethers.utils.AbiCoder();
 
-//const customWsProvider = new ethers.WebSocketProvider(url);
-// const customWsProvider = await new hre.ethers.getDefaultProvider("ws://127.0.0.1:8545/");
 const customWsProvider = hre.ethers.provider;
 
 const [user1, user2] = await hre.ethers.getSigners();
@@ -21,6 +18,8 @@ const WETHContract1 = new hre.ethers.Contract(TOKEN.WETH, ABIS.WETH, user1);
 const WETHContract2 = new hre.ethers.Contract(TOKEN.WETH, ABIS.WETH, user2);
 const DAIContract1 = new hre.ethers.Contract(TOKEN.DAI, ABIS.ERC20, user1);
 const DAIContract2 = new hre.ethers.Contract(TOKEN.DAI, ABIS.ERC20, user2);
+const routerContract1 = new hre.ethers.Contract(CONTRACTS.UNIV3_ROUTER, ABIS.ROUTER, user1);
+const routerContract2 = new hre.ethers.Contract(CONTRACTS.UNIV3_ROUTER, ABIS.ROUTER, user2);
 
 async function readBalance(token) {
   let balance1 = 0;
@@ -56,9 +55,9 @@ describe("Test", function () {
     //await readBalance("DAI");
 
     const tx = await WETHContract1.deposit({ value: ethers.utils.parseEther("123") });
-    
-    
-    let blockData = await customWsProvider.send("eth_getBlockByNumber", ["pending",false]);
+
+
+    let blockData = await customWsProvider.send("eth_getBlockByNumber", ["pending", false]);
     let transactionData1 = await customWsProvider.getTransaction(blockData.transactions[0]);
     console.log("block data============================");
     console.log(blockData);
@@ -67,7 +66,7 @@ describe("Test", function () {
 
     const tx2 = await WETHContract2.deposit({ value: ethers.utils.parseEther("456"), gasPrice: transactionData1.gasPrice.add(1n) });
 
-    blockData = await customWsProvider.send("eth_getBlockByNumber", ["pending",false]);
+    blockData = await customWsProvider.send("eth_getBlockByNumber", ["pending", false]);
     transactionData1 = await customWsProvider.getTransaction(blockData.transactions[0]);
     let transactionData2 = await customWsProvider.getTransaction(blockData.transactions[1]);
     console.log("block data============================");
@@ -97,6 +96,49 @@ describe("Test", function () {
       gasLimit: estimateGas
     });
     console.log(res); */
+  });
+  it("Transaction ordering", async function () {
+    await readBalance("ETH");
+    await readBalance("WETH");
+    await readBalance("DAI");
+    const tx1 = await WETHContract1.deposit({ value: ethers.utils.parseEther("100") });
+    await tx1.wait();
+    const tx2 = await WETHContract2.deposit({ value: ethers.utils.parseEther("100") });
+    await tx2.wait();
+    await readBalance("ETH");
+    await readBalance("WETH");
+    await readBalance("DAI");
+
+    const params = {
+      "tokenIn": TOKEN.WETH,
+      "tokenOut": TOKEN.DAI,
+      "fee": ethers.BigNumber.from("3000"),
+      "recipient": user2.address,
+      "deadline": ethers.BigNumber.from(floor(Date.now()/1000)+20*60),
+      "amountIn": ethers.BigNumber.from("10"),
+      "amountOutMinimum": ethers.BigNumber.from("0"),
+      "sqrtPriceLimitX96": ethers.BigNumber.from("0")
+    };
+    //console.log(params);
+
+    const approvalResponse = await WETHContract2.approve(CONTRACTS.UNIV3_ROUTER, 10);
+    //console.log("approvalResponse = ", approvalResponse);
+
+
+    const dataFunc = ifaceRouter.encodeFunctionData('exactInputSingle', [params]);
+    const estimateGas = await user2.estimateGas({
+      to: CONTRACTS.UNIV3_ROUTER, data: dataFunc, value: hre.ethers.utils.parseEther("0.0")
+    })
+    console.log("estimateGas = ", estimateGas);  
+
+    const tx = await routerContract2.exactInputSingle(params, {gasLimit: estimateGas.add(1)});
+    await tx.wait();
+    console.log(tx);
+
+    console.log("finish transaction ");
+    await readBalance("ETH");
+    await readBalance("WETH");
+    await readBalance("DAI");
   });
   /*it("mint liquidity", async function () {
     // estimate

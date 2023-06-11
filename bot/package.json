@@ -13,7 +13,8 @@
     "alchemy-sdk": "^2.8.3",
     "bignumber": "^1.1.0",
     "ethers-utils": "^2.1.11",
-    "jsbi": "^3.2.5"
+    "jsbi": "^3.2.5",
+    "mathjs": "^11.8.0"
   },
   "type": "module",
   "devDependencies": {
