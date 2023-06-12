@@ -20,6 +20,7 @@ const DAIContract1 = new hre.ethers.Contract(TOKEN.DAI, ABIS.ERC20, user1);
 const DAIContract2 = new hre.ethers.Contract(TOKEN.DAI, ABIS.ERC20, user2);
 const routerContract1 = new hre.ethers.Contract(CONTRACTS.UNIV3_ROUTER, ABIS.ROUTER, user1);
 const routerContract2 = new hre.ethers.Contract(CONTRACTS.UNIV3_ROUTER, ABIS.ROUTER, user2);
+const NFPManagerContract = new hre.ethers.Contract(CONTRACTS.NFP_MANAGER, ABIS.NFP, user1);
 
 async function readBalance(token) {
   let balance1 = 0;
@@ -45,6 +46,18 @@ async function readBalance(token) {
   console.log("[", token, "]:", "user2 = ", balance2);
 }
 
+async function readBlockData() {
+  let blockData = await customWsProvider.send("eth_getBlockByNumber", ["pending", false]);
+  console.log("block data============================");
+  console.log(blockData);
+
+  for (let i = 0; i < blockData.transactions.length; i++) {
+    let transactionData = await customWsProvider.getTransaction(blockData.transactions[i]);
+    console.log("pending transaction==================", i);
+    console.log(transactionData);
+  }
+}
+
 describe("Test", function () {
   it("Init", async function () {
     console.log(1);
@@ -55,26 +68,11 @@ describe("Test", function () {
     //await readBalance("DAI");
 
     const tx = await WETHContract1.deposit({ value: ethers.utils.parseEther("123") });
+    console.log(tx);
+    await readBlockData();
 
-
-    let blockData = await customWsProvider.send("eth_getBlockByNumber", ["pending", false]);
-    let transactionData1 = await customWsProvider.getTransaction(blockData.transactions[0]);
-    console.log("block data============================");
-    console.log(blockData);
-    console.log("pending transaction1==================");
-    console.log(transactionData1);
-
-    const tx2 = await WETHContract2.deposit({ value: ethers.utils.parseEther("456"), gasPrice: transactionData1.gasPrice.add(1n) });
-
-    blockData = await customWsProvider.send("eth_getBlockByNumber", ["pending", false]);
-    transactionData1 = await customWsProvider.getTransaction(blockData.transactions[0]);
-    let transactionData2 = await customWsProvider.getTransaction(blockData.transactions[1]);
-    console.log("block data============================");
-    console.log(blockData);
-    console.log("pending transaction1==================");
-    console.log(transactionData1);
-    console.log("pending transaction2==================");
-    console.log(transactionData2);
+    const tx2 = await WETHContract2.deposit({ value: ethers.utils.parseEther("456"), gasPrice: tx.gasPrice.add(1n) });
+    await readBlockData();
 
     await tx.wait();
     await tx2.wait();
@@ -114,7 +112,7 @@ describe("Test", function () {
       "tokenOut": TOKEN.DAI,
       "fee": ethers.BigNumber.from("3000"),
       "recipient": user2.address,
-      "deadline": ethers.BigNumber.from(floor(Date.now()/1000)+20*60),
+      "deadline": ethers.BigNumber.from(floor(Date.now() / 1000) + 20 * 60),
       "amountIn": ethers.BigNumber.from("10"),
       "amountOutMinimum": ethers.BigNumber.from("0"),
       "sqrtPriceLimitX96": ethers.BigNumber.from("0")
@@ -122,16 +120,31 @@ describe("Test", function () {
     //console.log(params);
 
     const approvalResponse = await WETHContract2.approve(CONTRACTS.UNIV3_ROUTER, 10);
-    //console.log("approvalResponse = ", approvalResponse);
-
-
     const dataFunc = ifaceRouter.encodeFunctionData('exactInputSingle', [params]);
     const estimateGas = await user2.estimateGas({
       to: CONTRACTS.UNIV3_ROUTER, data: dataFunc, value: hre.ethers.utils.parseEther("0.0")
     })
-    console.log("estimateGas = ", estimateGas);  
+    console.log("estimateGas = ", estimateGas);
 
-    const tx = await routerContract2.exactInputSingle(params, {gasLimit: estimateGas.add(1)});
+    const tx = await routerContract2.exactInputSingle(params, { gasLimit: estimateGas.add(1) });
+    const gasPrice1 = tx.gasPrice.add(1n);
+    await readBlockData();
+
+    //mint
+    /* const paramsMint = {
+      "token0": TOKEN.WETH,
+      "token1": TOKEN.DAI,
+      "fee": ethers.BigNumber.from("3000"),
+      "tickLower": 1,
+      "tickUpper": 1,
+      "amount0Desired": 1,
+      "amount1Desired": 1,
+      "amount0Min": 1,
+      "amount1Min": 1,
+      "recipient": user2.address,
+      "deadline": ethers.BigNumber.from(floor(Date.now() / 1000) + 20 * 60)
+    }; */
+
     await tx.wait();
     console.log(tx);
 
